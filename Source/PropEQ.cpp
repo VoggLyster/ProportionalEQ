@@ -13,7 +13,13 @@
 PropEQ::PropEQ(double _samplerate)
 {
     samplerate = _samplerate;
-    x1 = x2 = y0 = y1 = y2 = 0.0f;
+    for (int i = 0; i < N_EQ; i++) {
+        states[i].x1 = 0.f;
+        states[i].x2 = 0.f;
+        states[i].y0 = 0.f;
+        states[i].y1 = 0.f;
+        states[i].y2 = 0.f;
+    }
     setPolesAndZeros();
 }
 
@@ -29,32 +35,31 @@ float PropEQ::process(float input)
     if (input > 0.f)
         int test = 0;
     x0 = input;
-    HLS = pow(g[0],  1.f / 2.f) *
-        1/q0[0] * (p0[0] * x0 + p1[0] * x1 + p2[0] * x2
-        - q1[0] * y1 - q2[0] * y2);
+    states[0].y0 = pow(g[0],  1.f / 2.f) *
+        1/q0[0] * (p0[0] * x0 + p1[0] * states[0].x1 + p2[0] * states[0].x2
+        - q1[0] * states[0].y1 - q2[0] * states[0].y2);
+    updateState(0);
+
 
     for (int i = 0; i < N_EQ - 2; i++) {
-        HPN[i] = 1/q0[i] * (p0[i] * x0 + p1[i] * x1 + p2[i] * x2
-            - q1[i] * y1 - q2[i] * y2);
+        states[i].y0 = 1/q0[i] * (p0[i] * x0 + p1[i] * states[i].x1 + p2[i] * states[i].x2
+            - q1[i] * states[i].y1 - q2[i] * states[i].y2);
+        updateState(i);
     }
 
-    HHS = g[N_EQ - 1] * q0[N_EQ - 1] * (p0[N_EQ - 1] * x0 - p1[N_EQ - 1] * x1 - p2[N_EQ - 1] * x2
-        + q1[N_EQ - 1] * y1 + q2[N_EQ - 1] * y2);;
+    states[N_EQ - 1].y0 = g[N_EQ - 1] * q0[N_EQ - 1] * (p0[N_EQ - 1] * x0 - p1[N_EQ - 1] * states[N_EQ - 1].x1 - p2[N_EQ - 1] * states[N_EQ - 1].x2
+        + q1[N_EQ - 1] * states[N_EQ - 1].y1 + q2[N_EQ - 1] * states[N_EQ - 1].y2);
+    updateState(N_EQ - 1);
 
-    y0 = HLS;
-    for (int i = 0; i < N_EQ - 2; i++) {
-        y0 += HPN[i];
+    float output = 0.0f;
+
+    for (int i = 0; i < N_EQ; i++) {
+        output = states[i].y0;
     }
-    y0 += HHS;
 
-    y0 *= g0;
+    output *= g0;
 
-    x2 = x1;
-    x1 = x0;
-    y2 = y1;
-    y1 = y0;
-
-    return y0;
+    return output;
 }
 
 void PropEQ::setPolesAndZeros()
@@ -95,4 +100,12 @@ void PropEQ::setPolesAndZeros()
 float PropEQ::freqToW(float frequency)
 {
     return float(frequency / samplerate);
+}
+
+void PropEQ::updateState(int idx)
+{
+    states[idx].x2 = states[idx].x1;
+    states[idx].x1 = x0;
+    states[idx].y2 = states[idx].y1;
+    states[idx].y1 = states[idx].y0;
 }

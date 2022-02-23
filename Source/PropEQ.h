@@ -10,6 +10,11 @@
 #include <JuceHeader.h>
 #define N_EQ 9
 
+struct State {
+    float y0, y1, y2;
+    float x1, x2;
+};
+
 class PropEQ
 {
 public:
@@ -22,6 +27,7 @@ public:
 private:
     void setPolesAndZeros();
     float freqToW(float frequency);
+    void updateState(int idx);
 
     double samplerate;
 
@@ -35,11 +41,9 @@ private:
     float q1[N_EQ];
     float q2[N_EQ];
 
-    float y0, y1, y2;
-    float x0, x1, x2;
+    float x0;
 
-    float HLS, HHS = 0.0f;
-    float HPN[N_EQ - 2];
+    State states[N_EQ];
 
     float centerFreqs[N_EQ] = { 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
 };
