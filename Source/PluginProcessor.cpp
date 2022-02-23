@@ -93,8 +93,8 @@ void ProportionalEQAudioProcessor::changeProgramName (int index, const juce::Str
 //==============================================================================
 void ProportionalEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    propEQs[0] = std::make_unique<PropEQ>(sampleRate);
+    propEQs[1] = std::make_unique<PropEQ>(sampleRate);
 }
 
 void ProportionalEQAudioProcessor::releaseResources()
@@ -154,7 +154,9 @@ void ProportionalEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     {
         auto* channelData = buffer.getWritePointer (channel);
 
-        // ..do something to the data...
+        for (int n = 0; n < buffer.getNumSamples(); n++) {
+            channelData[n] = propEQs[channel]->process(channelData[n]);
+        }
     }
 }
 

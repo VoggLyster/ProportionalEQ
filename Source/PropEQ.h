@@ -25,17 +25,21 @@ private:
 
     double samplerate;
 
-    double g[N_EQ];
+    float g[N_EQ] = { 1.0, 1.0, 1.0, 1.0, 0.5, 0.1, 0.1, 0.1, 0.1 };
+    float g0 = 0.1f;
 
-    double p0[N_EQ];
-    double p1[N_EQ];
-    double p2[N_EQ];
-    double q0[N_EQ];
-    double q1[N_EQ];
-    double q2[N_EQ];
+    float p0[N_EQ];
+    float p1[N_EQ];
+    float p2[N_EQ];
+    float q0[N_EQ];
+    float q1[N_EQ];
+    float q2[N_EQ];
 
-    float y0, y1, y2 = 0.0f;
-    float x0, x1, x2 = 0.0f;
+    float y0, y1, y2;
+    float x0, x1, x2;
+
+    float HLS, HHS = 0.0f;
+    float HPN[N_EQ - 2];
 
     float centerFreqs[N_EQ] = { 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
 };
