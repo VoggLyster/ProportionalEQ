@@ -19,7 +19,9 @@ ProportionalEQAudioProcessor::ProportionalEQAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+    forwardFFT(fftOrder),
+    window(fftSize, juce::dsp::WindowingFunction<float>::hann)
 #endif
 {
 }
@@ -135,28 +137,62 @@ void ProportionalEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
         auto* channelData = buffer.getWritePointer (channel);
 
         for (int n = 0; n < buffer.getNumSamples(); n++) {
+            channelData[n] = random.nextFloat() * 0.25f - 0.125f;
+        }
+
+        for (int n = 0; n < buffer.getNumSamples(); n++) {
             channelData[n] = propEQs[channel]->process(channelData[n]);
         }
+    }
+    auto* channelData = buffer.getReadPointer(0);
+    for (int n = 0; n < buffer.getNumSamples(); n++) {
+        pushNextSampleIntoFifo(channelData[n]);
+    }
+}
+
+void ProportionalEQAudioProcessor::pushNextSampleIntoFifo(float sample) {
+    if (fifoIndex == fftSize) {
+        if (!nextFFTBlockReady) {
+            juce::zeromem(fftData, sizeof(fftData));
+            memcpy(fftData, fifo, sizeof(fifo));
+            nextFFTBlockReady = true;
+        }
+        fifoIndex = 0;
+    }
+    fifo[fifoIndex++] = sample;
+}
+
+void ProportionalEQAudioProcessor::drawNextFrameOfSpectrum() {
+    window.multiplyWithWindowingTable(fftData, fftSize);
+    forwardFFT.performFrequencyOnlyForwardTransform(fftData);
+    auto mindB = -100.0f;
+    auto maxdB = 0.0f;
+    for (int i = 0; i < scopeSize; i++) {
+        auto skewedProportionX = 1.0f - std::exp(std::log(1.0f - (float) i / (float) 
+            scopeSize) * 0.2f);
+        auto fftDataIndex = juce::jlimit(0, fftSize / 2, (int)(skewedProportionX * (float)
+            fftSize * 0.5f));
+        auto level = juce::jmap(juce::jlimit(mindB, maxdB, juce::Decibels::gainToDecibels
+        (fftData[fftDataIndex]) - juce::Decibels::gainToDecibels((float)fftSize)),
+            mindB, maxdB, 0.0f, 1.0f);
+        scopeData[i] = level;
+    }
+}
+
+void ProportionalEQAudioProcessor::timerCallback() {
+    if (nextFFTBlockReady)
+    {
+        drawNextFrameOfSpectrum();
+        nextFFTBlockReady = false;
+        
     }
 }
 

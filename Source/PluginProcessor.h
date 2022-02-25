@@ -11,10 +11,17 @@
 #include <JuceHeader.h>
 #include "PropEQ.h"
 
+enum
+{
+    fftOrder = 11,
+    fftSize = 1 << fftOrder,
+    scopeSize = 512
+};
+
 //==============================================================================
 /**
 */
-class ProportionalEQAudioProcessor  : public juce::AudioProcessor
+class ProportionalEQAudioProcessor  : public juce::AudioProcessor, public juce::Timer
 {
 public:
     //==============================================================================
@@ -54,8 +61,23 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    void drawNextFrameOfSpectrum();
+    bool nextFFTBlockReady = false;
+    float scopeData[scopeSize];
+
 private:
+    juce::Random random;
+    
     std::unique_ptr<PropEQ> propEQs[2];
+
+    juce::dsp::FFT forwardFFT;
+    juce::dsp::WindowingFunction<float> window;
+    float fifo[fftSize];
+    float fftData[2 * fftSize];
+    int fifoIndex = 0;
+
+    void pushNextSampleIntoFifo(float sample);
+    void timerCallback() override;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProportionalEQAudioProcessor)
 };
