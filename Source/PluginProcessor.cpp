@@ -21,9 +21,16 @@ ProportionalEQAudioProcessor::ProportionalEQAudioProcessor()
                      #endif
                        ),
     forwardFFT(fftOrder),
-    window(fftSize, juce::dsp::WindowingFunction<float>::hann)
+    window(fftSize, juce::dsp::WindowingFunction<float>::hann), 
+    parameters(*this, nullptr, juce::Identifier("ProportionalEQ"), createParameterLayout())
 #endif
 {
+    juce::String name = "";
+    for (int i = 0; i < N_EQ; i++) {
+        name = "g" + juce::String(i);
+        gainParameters[i] = parameters.getRawParameterValue(name);
+        parameters.addParameterListener(name, this);
+    }
 }
 
 ProportionalEQAudioProcessor::~ProportionalEQAudioProcessor()
@@ -196,6 +203,34 @@ void ProportionalEQAudioProcessor::timerCallback() {
     }
 }
 
+juce::AudioProcessorValueTreeState::ParameterLayout ProportionalEQAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout params;
+
+    juce::String name = "";
+    for (int i = 0; i < N_EQ; i++) {
+        name = "g" + juce::String(i);
+        params.add(std::make_unique<juce::AudioParameterFloat>(name, name, 0.1f, 2.0f, 1.0f));
+    }
+
+    return params;
+}
+
+void ProportionalEQAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
+{
+    float gains[N_EQ];
+
+    for (int i = 0; i < N_EQ; i++)
+    {
+        gains[i] = *gainParameters[i];
+    }
+
+    for (int i = 0; i < 2; i++)
+    {
+        propEQs[i]->setGainVector(gains);
+    }
+}
+
 //==============================================================================
 bool ProportionalEQAudioProcessor::hasEditor() const
 {
@@ -204,7 +239,7 @@ bool ProportionalEQAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* ProportionalEQAudioProcessor::createEditor()
 {
-    return new ProportionalEQAudioProcessorEditor (*this);
+    return new ProportionalEQAudioProcessorEditor (*this, parameters);
 }
 
 //==============================================================================

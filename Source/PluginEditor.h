@@ -14,10 +14,12 @@
 //==============================================================================
 /**
 */
+typedef juce::AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
+
 class ProportionalEQAudioProcessorEditor  : public juce::AudioProcessorEditor, public juce::Timer
 {
 public:
-    ProportionalEQAudioProcessorEditor (ProportionalEQAudioProcessor&);
+    ProportionalEQAudioProcessorEditor (ProportionalEQAudioProcessor&, juce::AudioProcessorValueTreeState&);
     ~ProportionalEQAudioProcessorEditor() override;
 
     //==============================================================================
@@ -28,7 +30,12 @@ private:
     void drawFrame(juce::Graphics& g);
     void timerCallback() override;
 
+    juce::AudioProcessorValueTreeState& vts;
     ProportionalEQAudioProcessor& audioProcessor;
+
+    juce::Slider gainSliders[N_EQ];
+    std::unique_ptr<SliderAttachment> gainAttachments[N_EQ];
+    
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProportionalEQAudioProcessorEditor)
 };

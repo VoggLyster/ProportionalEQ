@@ -10,9 +10,18 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-ProportionalEQAudioProcessorEditor::ProportionalEQAudioProcessorEditor (ProportionalEQAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+ProportionalEQAudioProcessorEditor::ProportionalEQAudioProcessorEditor (ProportionalEQAudioProcessor& p, 
+    juce::AudioProcessorValueTreeState& _vts)
+    : AudioProcessorEditor (&p), audioProcessor (p), vts(_vts)
 {
+    juce::String name = "";
+    for (int i = 0; i < N_EQ; i++) {
+        addAndMakeVisible(gainSliders[i]);
+        name = "g" + juce::String(i);
+        gainAttachments[i].reset(new SliderAttachment(vts, name, gainSliders[i]));
+        gainSliders[i].setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
+    }
+
     setSize (400, 300);
     setResizable(true, true);
     startTimerHz(30);
@@ -49,8 +58,12 @@ void ProportionalEQAudioProcessorEditor::drawFrame(juce::Graphics& g)
 
 void ProportionalEQAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+    float w = getWidth() / N_EQ;
+    float h = getHeight();
+
+    for (int i = 0; i < N_EQ; i++) {
+        gainSliders[i].setBounds(i * w, 0, w, h);
+    }
 }
 
 void ProportionalEQAudioProcessorEditor::timerCallback() {

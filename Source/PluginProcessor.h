@@ -21,7 +21,8 @@ enum
 //==============================================================================
 /**
 */
-class ProportionalEQAudioProcessor  : public juce::AudioProcessor, public juce::Timer
+class ProportionalEQAudioProcessor  : public juce::AudioProcessor, public juce::Timer,
+    public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     //==============================================================================
@@ -67,8 +68,11 @@ public:
 
 private:
     juce::Random random;
-    
+    juce::AudioProcessorValueTreeState parameters;
+    std::atomic<float>* gainParameters[N_EQ];
+
     std::unique_ptr<PropEQ> propEQs[2];
+    
 
     juce::dsp::FFT forwardFFT;
     juce::dsp::WindowingFunction<float> window;
@@ -78,6 +82,10 @@ private:
 
     void pushNextSampleIntoFifo(float sample);
     void timerCallback() override;
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProportionalEQAudioProcessor)
+
+    // Inherited via Listener
+    virtual void parameterChanged(const juce::String& parameterID, float newValue) override;
 };

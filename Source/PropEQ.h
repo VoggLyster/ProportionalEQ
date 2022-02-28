@@ -15,6 +15,11 @@ struct State {
     float x1, x2;
 };
 
+struct Coeffs {
+    float b0, b1, b2;
+    float a0, a1, a2;
+};
+
 class PropEQ
 {
 public:
@@ -31,31 +36,28 @@ private:
 
     double samplerate;
 
-    float g[N_EQ] = { 1.f, 0.0f, 0.0f, 0.0f, 0.f, 0.0f, 0.0f, 0.f, 0.f, 0.0f };
+    // 0.25 < g < 4
+    // All About Audio Equalization: Solutions and Frontiers, p.11
+    float g[N_EQ] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+
     float g2 = 0.0f;
     float g4 = 0.0f;
     float g0 = 1.f;
 
     float omega = 0.f;
     float omega2 = 0.f;
-    float Q = 0.1f;
+    float Q = 0.15f;
     float wc = 0.f;
     float B = 0.f;
     float t = 0.f;
     float c = 0.f;
 
-    float p0[N_EQ];
-    float p1[N_EQ];
-    float p2[N_EQ];
-    float q0[N_EQ];
-    float q1[N_EQ];
-    float q2[N_EQ];
-
+    Coeffs coeffs[N_EQ];
     float x0;
 
     State states[N_EQ];
 
-    float centerFreqs[N_EQ] = { 31.25f ,62.5f, 125.f, 250.f, 500.f, 1000.f, 2000.f, 4000.f, 8000.f, 16000.f };
+    float centerFreqs[N_EQ] = { 31.5f ,63.f, 125.f, 250.f, 500.f, 1000.f, 2000.f, 3000.f, 8000.f, 16000.f };
 };
 
 #pragma once
