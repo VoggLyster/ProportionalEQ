@@ -30,6 +30,8 @@ private:
     void drawFrame(juce::Graphics& g);
     void timerCallback() override;
 
+    juce::LookAndFeel_V4 laf;
+
     juce::AudioProcessorValueTreeState& vts;
     ProportionalEQAudioProcessor& audioProcessor;
 

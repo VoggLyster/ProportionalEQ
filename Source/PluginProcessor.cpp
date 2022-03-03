@@ -210,7 +210,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProportionalEQAudioProcessor
     juce::String name = "";
     for (int i = 0; i < N_EQ; i++) {
         name = "g" + juce::String(i);
-        params.add(std::make_unique<juce::AudioParameterFloat>(name, name, 0.1f, 2.0f, 1.0f));
+        params.add(std::make_unique<juce::AudioParameterFloat>(name, name, 0.25f, 4.0f, 1.0f));
     }
 
     return params;
